@@ -6,7 +6,7 @@ export default () => (
   <Page>
     <StackableContainer base>
       <StackableContainer lessPadding>
-        <h1 className="title">Cosmoshub Multisig Manager</h1>
+        <h1 className="title">Dig conversion tool</h1>
       </StackableContainer>
         <FindMultisigForm />
     </StackableContainer>

@@ -15,15 +15,17 @@ import TransactionList from "../../../components/dataViews/TransactionList";
 export async function getServerSideProps(context) {
   let holdings;
   try {
+    // getting public key from wallet
     const client = await StargateClient.connect(
       process.env.NEXT_PUBLIC_NODE_ADDRESS
     );
-    const multisigAddress = context.params.address;
+    const address = context.params.address;
     holdings = await client.getBalance(
-      multisigAddress,
+      address,
       process.env.NEXT_PUBLIC_DENOM
     );
-    const accountOnChain = await getMultisigAccount(multisigAddress, client);
+
+    const accountOnChain = await getMultisigAccount(address, client);
 
     return {
       props: { accountOnChain, holdings: holdings.amount / 1000000 },
@@ -31,7 +33,7 @@ export async function getServerSideProps(context) {
   } catch (error) {
     console.log(error);
     return {
-      props: { error: error.message, holdings: holdings.amount / 1000000 },
+      props: { error: error.message, holdings: 0 / 1000000 },
     };
   }
 }
@@ -44,7 +46,7 @@ const multipage = (props) => {
     <Page>
       <StackableContainer base>
         <StackableContainer>
-          <label>Multisig Address</label>
+          <label>Dig Address</label>
           <h1>
             <HashView hash={address} />
           </h1>
@@ -81,13 +83,12 @@ const multipage = (props) => {
             </div>
             <div className="col-2">
               <StackableContainer lessPadding>
-                <h2>New transaction</h2>
+                <h2>Conversion</h2>
                 <p>
-                  Once a transaction is created, it can be signed by the
-                  multisig members, and then broadcast.
+                  Transfer dig from BSC wallet to DIG wallet
                 </p>
                 <Button
-                  label="Create Transaction"
+                  label="Convert"
                   onClick={() => {
                     setShowTxForm(true);
                   }}
