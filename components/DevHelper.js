@@ -20,9 +20,6 @@ const DevHelper = (props) => (
         </a>
       </li>
     </ul>
-    <a href="https://github.com/samepant/cosmoshub-legacy-multisig">
-      View on Github
-    </a>
 
     <style jsx>{`
       .dev-helper {

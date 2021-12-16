@@ -7,6 +7,9 @@ import Button from "../../components/inputs/Button";
 import Input from "../../components/inputs/Input";
 import StackableContainer from "../layout/StackableContainer";
 
+import { recoverPersonalSignature } from '@metamask/eth-sig-util'
+import { toChecksumAddress } from 'ethereumjs-util'
+
 class TransactionForm extends React.Component {
   constructor(props) {
     super(props);
@@ -19,6 +22,8 @@ class TransactionForm extends React.Component {
       processing: false,
       addressError: "",
     };
+
+    this.createTransaction = this.createTransaction.bind(this);
   }
 
   handleChange = (e) => {
@@ -62,11 +67,45 @@ class TransactionForm extends React.Component {
         this.state.gas
       );
       console.log(tx);
-      const dataJSON = JSON.stringify(tx);
-      const res = await axios.post("/api/transaction", { dataJSON });
-      const { transactionID } = res.data;
-      this.props.router.push(
-        `${this.props.address}/transaction/${transactionID}`
+
+      // send to metamask to sign
+      let sig;
+      let from = this.props.address
+      let msgParams = JSON.stringify(tx)
+      let params = [from, msgParams];
+      let method = 'personal_sign';
+
+      console.log("from is " + from);
+
+      this.props.web3.currentProvider.sendAsync(
+        {
+          method,
+          params,
+          from,
+        },
+        function (err, result) {
+          if (err) return console.dir(err);
+          if (result.error) {
+            alert(result.error.message);
+          }
+          if (result.error) return console.error('ERROR', result);
+          console.log('TYPED SIGNED:' + JSON.stringify(result.result));
+    
+          const recovered = recoverPersonalSignature({
+            data: msgParams,
+            signature: result.result,
+          });
+    
+          if (
+            toChecksumAddress(recovered) === toChecksumAddress(from)
+          ) {
+            alert('Successfully recovered signer as ' + from);
+          } else {
+            alert(
+              'Failed to verify signer when comparing ' + result + ' to ' + from
+            );
+          }
+        }
       );
     } else {
       this.setState({ addressError: "Use a valid cosmos-hub address" });

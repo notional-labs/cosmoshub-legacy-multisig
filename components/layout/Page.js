@@ -19,15 +19,6 @@ const Page = (props) => {
         )}
         {props.children}
       </div>
-      <div className="footer-links">
-        <StackableContainer base lessPadding lessMargin>
-          <p>
-            <a href="https://github.com/samepant/cosmoshub-legacy-multisig">
-              View on github
-            </a>
-          </p>
-        </StackableContainer>
-      </div>
       <style jsx>{`
         .page {
           display: flex;

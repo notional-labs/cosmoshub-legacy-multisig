@@ -1,33 +1,29 @@
-import axios from "axios";
 import React from "react";
-import { withRouter } from "next/router";
 
 import Button from "../inputs/Button";
 import StackableContainer from "../layout/StackableContainer";
-import Input from "../inputs/Input";
+
+import { getWeb3Instance } from "../../lib/metamaskHelpers";
 
 class FindMultisigForm extends React.Component {
   constructor(props) {
     super(props);
 
     this.state = {
-      address: "",
       keyError: "",
       processing: false,
     };
   }
 
-  handleChange = (e) => {
-    this.setState({
-      [e.target.name]: e.target.value,
-    });
-  };
+  handleConnect = async () => {
+    let web3 = await getWeb3Instance();
 
-  handleSearch = async () => {
-    const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
-    const account = accounts[0];
+    const address = (await web3.eth.getAccounts())[0];
 
-    this.props.router.push(`/multi/${account}`);
+    const balanceMWei = await web3.eth.getBalance(address);
+    const balance = web3.utils.fromWei(balanceMWei, 'mwei');
+
+    this.props.onSuccess(web3, address, balance);
   };
 
   render() {
@@ -35,30 +31,16 @@ class FindMultisigForm extends React.Component {
       <StackableContainer>
         <StackableContainer lessPadding>
           <p>
-            Already have a multisig address? Enter it below. If it’s a valid
-            address, you will be able to view its transactions and create new
-            ones.
+            Already have a 0x address? Enter it below. If it’s a valid
+            address, you will be able to transfer your dig from 0x format 
+            address to dig1 format address
           </p>
         </StackableContainer>
         <StackableContainer lessPadding lessMargin>
-          <Input
-            onChange={this.handleChange}
-            value={this.state.address}
-            label="Multisig Address"
-            name="address"
-            placeholder="cosmos1vqpjljwsynsn58dugz0w8ut7kun7t8ls2qkmsq"
-          />
           <Button
-            label="Use this Multisig"
-            onClick={this.handleSearch}
+            label="Connect wallet"
+            onClick={this.handleConnect}
             primary
-          />
-        </StackableContainer>
-        <StackableContainer lessPadding>
-          <p className="create-help">Don't have a multisig?</p>
-          <Button
-            label="Create New Multisig"
-            onClick={() => this.props.router.push("create")}
           />
         </StackableContainer>
         <style jsx>{`
@@ -82,4 +64,4 @@ class FindMultisigForm extends React.Component {
   }
 }
 
-export default withRouter(FindMultisigForm);
+export default FindMultisigForm;
