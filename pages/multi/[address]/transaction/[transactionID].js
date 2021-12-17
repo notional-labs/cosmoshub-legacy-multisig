@@ -94,9 +94,6 @@ const transactionPage = ({
         Uint8Array.from(TxRaw.encode(signedTx).finish())
       );
       console.log(result);
-      const res = await axios.post(`/api/transaction/${transactionID}`, {
-        txHash: result.transactionHash,
-      });
       setTransactionHash(result.transactionHash);
     } catch (e) {
       setIsBroadcasting(false);

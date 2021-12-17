@@ -7,9 +7,12 @@ import Button from "../../components/inputs/Button";
 import Input from "../../components/inputs/Input";
 import StackableContainer from "../layout/StackableContainer";
 
+import { fromBase64 } from "@cosmjs/encoding"
+
 import { recoverPersonalSignature } from '@metamask/eth-sig-util'
 import { toChecksumAddress } from 'ethereumjs-util'
 
+import { getUint8ArrayPubKey } from '../../lib/metamaskHelpers'
 class TransactionForm extends React.Component {
   constructor(props) {
     super(props);
@@ -69,7 +72,6 @@ class TransactionForm extends React.Component {
       console.log(tx);
 
       // send to metamask to sign
-      let sig;
       let from = this.props.address
       let msgParams = JSON.stringify(tx)
       let params = [from, msgParams];
@@ -90,7 +92,19 @@ class TransactionForm extends React.Component {
           }
           if (result.error) return console.error('ERROR', result);
           console.log('TYPED SIGNED:' + JSON.stringify(result.result));
-    
+
+          // get pubKey
+          const pubKey = getUint8ArrayPubKey({
+            data: msgParams,
+            signature: result.result
+          })
+
+          /*
+          console.log("pubkey = " + pubKey)
+          console.log("cosmos pubkey = " + fromBase64("A7lEP4eu1Hh+bySk/H3wlX7VcelIYNVu7/gO+Uo3c1wi"))
+          */
+
+          // verify signer
           const recovered = recoverPersonalSignature({
             data: msgParams,
             signature: result.result,
@@ -105,10 +119,18 @@ class TransactionForm extends React.Component {
               'Failed to verify signer when comparing ' + result + ' to ' + from
             );
           }
+
+          // send transaction
+          /*
+          const broadcaster = await StargateClient.connect(NEXT_PUBLIC_NODE_ADDRESS);
+          const result = await broadcaster.broadcastTx(
+            Uint8Array.from(TxRaw.encode(signedTx).finish())
+          );
+          */
         }
       );
     } else {
-      this.setState({ addressError: "Use a valid cosmos-hub address" });
+      this.setState({ addressError: "Use a valid address" });
     }
   };
 
