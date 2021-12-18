@@ -31,9 +31,6 @@ const Button = (props) => (
         text-decoration: none;
         text-align: center;
       }
-      .primary {
-        border: 2px solid #404040;
-      }
 
       button:first-child {
         margin-top: 0;
