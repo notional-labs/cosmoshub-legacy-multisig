@@ -14,6 +14,22 @@ import { toChecksumAddress } from 'ethereumjs-util'
 
 import { getUint8ArrayPubKey } from '../../lib/metamaskHelpers'
 import { makeSignDoc } from '@cosmjs/amino';
+import { Any } from "cosmjs-types/google/protobuf/any";
+import { PubKey } from "cosmjs-types/cosmos/crypto/secp256k1/keys";
+import { AuthInfo, SignerInfo } from "cosmjs-types/cosmos/tx/v1beta1/tx";
+
+
+
+encodeEthPubkey = (pubkeyBytes) => {
+    const pubkeyProto = PubKey.fromPartial({
+      key: pubkeyBytes,
+    });
+    return Any.fromPartial({
+      typeUrl: "/cosmos.crypto.ethsecp256k1.PubKey",
+      value: Uint8Array.from(PubKey.encode(pubkeyProto).finish()),
+    });
+}
+
 
 class TransactionForm extends React.Component {
   constructor(props) {
@@ -47,12 +63,13 @@ class TransactionForm extends React.Component {
       publicKey: pubkey,
       modeInfo: {
         single: {
-          mode: "" ,
+          mode: "SIGN_MODE_EIP191_LEGACY_JSON" ,
         },
       },
       sequence: Long.fromNumber(sequence),
     };
-  
+    
+
     const authInfo = AuthInfo.fromPartial({
       signerInfos: [signerInfo],
       fee: {
@@ -60,15 +77,17 @@ class TransactionForm extends React.Component {
         gasLimit: Long.fromString(fee.gas),
       },
     });
-  
+    const authInfoBytes = AuthInfo.encode(authInfo).finish();
     const signedTx = TxRaw.fromPartial({
       bodyBytes: bodyBytes,
       authInfoBytes: authInfoBytes,
-      signatures: signatures,
+      signatures: [signatures],
     });
   
     return signedTx;
   };
+
+
 
   broadcastTx = async () => {
     const bodyBytes = decode(currentSignatures[0].bodyBytes);
@@ -89,6 +108,26 @@ class TransactionForm extends React.Component {
     });
     setTransactionHash(result.transactionHash);
   };
+
+  getTxBodyBytesForSend = (fromAddress, toAddress, amount) => {
+    return {
+      typeUrl: "/cosmos.tx.v1beta1.TxBody",
+      value: {
+        messages: [
+          {
+            typeUrl: "/cosmos.bank.v1beta1.MsgSend",
+            value: {
+              fromAddress: fromAddress,
+              toAddress: toAddress,
+              amount: amount,
+            },
+          },
+        ],
+        memo: memo,
+      },
+    }
+  }
+
   
   createSignDoc = (toAddress, amount, gas) => {
     const msgSend = {
@@ -107,7 +146,7 @@ class TransactionForm extends React.Component {
     };
     console.log("account on chain", this.props.accountOnChain)
     
-    return makeSignDoc([msg], fee, "dig-1", "", this.props.accountOnChain.accountNumber, this.props.accountOnChain.sequence)
+    return makeSignDoc([msg], fee, "dig-1", this.props.state.memo, this.props.accountOnChain.accountNumber, this.props.accountOnChain.sequence)
   };
 
   
