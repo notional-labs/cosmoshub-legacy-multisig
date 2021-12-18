@@ -4,7 +4,7 @@ import StackableContainer from "./StackableContainer";
 const Page = (props) => {
   return (
     <div className="page">
-      <Head title={props.title || "Cosmos Multisig Manager"} />
+      <Head title={props.title || "Dig conversion tool"} />
       <div className="container">
         {props.rootMultisig && (
           <div className="nav">

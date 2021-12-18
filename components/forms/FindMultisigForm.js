@@ -4,6 +4,7 @@ import Button from "../inputs/Button";
 import StackableContainer from "../layout/StackableContainer";
 
 import { getWeb3Instance } from "../../lib/metamaskHelpers";
+import { StargateClient } from "@cosmjs/stargate";
 
 class FindMultisigForm extends React.Component {
   constructor(props) {
@@ -20,10 +21,25 @@ class FindMultisigForm extends React.Component {
 
     const address = (await web3.eth.getAccounts())[0];
 
-    const balanceMWei = await web3.eth.getBalance(address);
-    const balance = web3.utils.fromWei(balanceMWei, 'mwei');
+    let client;
+    let balance;
 
-    this.props.onSuccess(web3, address, balance);
+    try {
+      client = await StargateClient.connect(
+        process.env.NEXT_PUBLIC_NODE_ADDRESS
+      );
+
+      balance = await client.getBalance(
+        address,
+        process.env.NEXT_PUBLIC_DENOM
+      );
+    }catch(error){
+      console.log("error = " + error)
+      this.props.onFailure();
+      return;
+    }
+
+    this.props.onSuccess(web3, address, balance.amount);
   };
 
   render() {

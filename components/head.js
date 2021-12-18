@@ -2,7 +2,7 @@ import NextHead from "next/head";
 import { string } from "prop-types";
 
 const defaultDescription =
-  "*:;;;:*:;;;:**:;;;:*:;;;:*COSMOS MULTISIGN*:;;;:*:;;;:**:;;;:*:;;;:*";
+  "*:;;;:*:;;;:**:;;;:*:;;;:*DIG CONVERSION TOOL*:;;;:*:;;;:**:;;;:*:;;;:*";
 const defaultOGURL = "";
 const defaultOGImage = "";
 

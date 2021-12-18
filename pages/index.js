@@ -34,6 +34,11 @@ export default () => {
                   setAddress(address);
                   setBalance(balance);
                 }}
+                onFailure = {
+                  () => {
+                    alert("fail to fetch your account");
+                  }
+                }
               />
             )
           }
