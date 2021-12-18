@@ -27,8 +27,24 @@ class FindMultisigForm extends React.Component {
 
   handleQueryBalanceOnRest = async (address) => {
     let url = process.env.NEXT_PUBLIC_REST_ADDRESS + "/cosmos/bank/v1beta1/balances/" + address;
-    let axiosRes = await axios.get(url);
-    return axiosRes.data.balances[0].amount;
+    let axiosRes;
+    try{
+      axiosRes = await axios.get(url);
+    } catch(error){ 
+      console.log("error = " + error)
+      return null;
+    }
+
+    let balance = 0;
+
+    if(axiosRes.data.balances.length > 0){
+      balance = axiosRes.data.balances[0].amount/1000000;
+    }
+    
+    let balanceStr = balance.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    balanceStr = balanceStr + ".000000";
+
+    return balanceStr;
   }
 
   handleQuery = async () => {
@@ -38,20 +54,16 @@ class FindMultisigForm extends React.Component {
         balance : balance,
         querySuccess: true,
       });
-    }
-  }
+    }else alert("Fail to query your balance");
+}
 
   handleConnect = async () => {
     let web3 = await getWeb3Instance();
 
     const address = (await web3.eth.getAccounts())[0];
 
-    let balance;
-
-    try {
-      balance = await this.handleQueryBalanceOnRest(address);
-    }catch(error){
-      console.log("error = " + error)
+    let balance = await this.handleQueryBalanceOnRest(address);
+    if(!balance){
       this.props.onFailure();
       return;
     }
@@ -71,7 +83,7 @@ class FindMultisigForm extends React.Component {
         </StackableContainer>
         <StackableContainer lessPadding lessMargin>
           <Button
-            label="Connect wallet"
+            label="Connect metamask wallet"
             onClick={this.handleConnect}
             primary
           />
@@ -90,7 +102,7 @@ class FindMultisigForm extends React.Component {
           />
           <br/>
           {this.state.querySuccess ? (
-            <p>Your balance is {this.state.balance}</p>
+            <p>Your balance is {this.state.balance} dig</p>
           ) : 
           (
             <></>
