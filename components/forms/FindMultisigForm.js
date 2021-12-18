@@ -85,7 +85,7 @@ class FindMultisigForm extends React.Component {
             placeholder=""
           />
           <Button
-            label="query balance for this address"
+            label="Query"
             onClick={this.handleQuery}
           />
           <br/>
