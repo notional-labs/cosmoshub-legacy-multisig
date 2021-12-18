@@ -42,7 +42,6 @@ class FindMultisigForm extends React.Component {
     }
     
     let balanceStr = balance.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    balanceStr = balanceStr + ".000000";
 
     return balanceStr;
   }
