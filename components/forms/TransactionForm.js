@@ -34,7 +34,60 @@ class TransactionForm extends React.Component {
       [e.target.name]: e.target.value,
     });
   };
+  makesignedTx = (
+    pubkey,
+    sequence,
+    fee,
+    bodyBytes,
+    signatures,
+  ) => {
+    const signerInfo = {
+      publicKey: pubkey,
+      modeInfo: {
+        single: {
+          mode: SignMode.SIGN_MODE_LEGACY_AMINO_JSON ,
+        },
+      },
+      sequence: Long.fromNumber(sequence),
+    };
+  
+    const authInfo = AuthInfo.fromPartial({
+      signerInfos: [signerInfo],
+      fee: {
+        amount: [...fee.amount],
+        gasLimit: Long.fromString(fee.gas),
+      },
+    });
+  
+    const signedTx = TxRaw.fromPartial({
+      bodyBytes: bodyBytes,
+      authInfoBytes: authInfoBytes,
+      signatures: signatures,
+    });
+  
+    return signedTx;
+  };
 
+  broadcastTx = async () => {
+    const bodyBytes = decode(currentSignatures[0].bodyBytes);
+    const signedTx = makesignedTx(
+      accountOnChain.pubkey,
+      txInfo.sequence,
+      txInfo.fee,
+      bodyBytes,
+      signatures
+    );
+    const broadcaster = await StargateClient.connect(process.env.NEXT_PUBLIC_NODE_ADDRESS);
+    const result = await broadcaster.broadcastTx(
+      Uint8Array.from(TxRaw.encode(signedTx).finish())
+    );
+    console.log(result);
+    const res = await axios.post(`/api/transaction/${transactionID}`, {
+      txHash: result.transactionHash,
+    });
+    setTransactionHash(result.transactionHash);
+  };
+  
   createTransaction = (toAddress, amount, gas) => {
     const msgSend = {
       fromAddress: this.props.address,
@@ -50,10 +103,11 @@ class TransactionForm extends React.Component {
       amount: coins(6000, process.env.NEXT_PUBLIC_DENOM),
       gas: gasLimit.toString(),
     };
-
+    console.log("account on chain", this.props.accountOnChain)
+    
     return {
-      accountNumber: this.props.accountOnChain.accountNumber,
-      sequence: this.props.accountOnChain.sequence,
+      accountNumber: this.props.accountOnChain.accountNumber ? this.props.accountOnChain.accountNumber : 0,
+      sequence: this.props.accountOnChain.sequence ? this.props.accountOnChain.sequence : 0,
       chainId: process.env.NEXT_PUBLIC_CHAIN_ID,
       msgs: [msg],
       fee: fee,
