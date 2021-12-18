@@ -63,7 +63,7 @@ class FindMultisigForm extends React.Component {
     return (
       <StackableContainer>
         <StackableContainer lessPadding>
-          <p>
+          <p style={{color: '#cc4400'}}>
             Already have a 0x address? Enter it below. If it’s a valid
             address, you will be able to transfer your dig from 0x format 
             address to dig1 format address
@@ -77,40 +77,57 @@ class FindMultisigForm extends React.Component {
           />
         </StackableContainer>
         <StackableContainer lessPadding lessMargin>
+        <div className="changeColor">
           <Input
+            className="queryInput"
             onChange={this.handleChange}
             value={this.state.address}
             label="Quick query balance for address"
             name="address"
             placeholder=""
           />
+           </div>
           <Button
             label="Query"
             onClick={this.handleQuery}
           />
           <br/>
           {this.state.querySuccess ? (
-            <p>Your balance is {this.state.balance}</p>
+            <p style={{color: '#424242'}}>Your balance is {this.state.balance}</p>
           ) : 
           (
             <></>
           )}
         </StackableContainer>
         <style jsx>{`
+          .changeMargin {
+            margin-top: 0.5em;
+            color: #424242;
+          }
           .multisig-form {
             display: flex;
             flex-direction: column;
             align-items: center;
           }
           .error {
-            color: coral;
+            margin-top: 0.5em;
+            color: #424242;
             font-size: 0.8em;
-            text-align: left;
+            text-align: center;
             margin: 0.5em 0;
           }
           .create-help {
             text-align: center;
+          }.feature_name{
+            color: #d84800;	
           }
+          .queryInput {
+            color: #424242;
+          }
+          .changeColor {
+            color: #424242;
+          }
+        
         `}</style>
       </StackableContainer>
     );

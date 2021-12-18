@@ -4,7 +4,7 @@ const StackableContainer = (props) => (
 
     <style jsx>{`
       .container {
-        background: rgba(255, 255, 255, 0.05);
+        background: rgba(255, 255, 255, 0.09);
         padding: ${props.lessPadding ? "15px" : "30px"};
         margin-top: ${props.lessMargin || props.base ? "25px" : "50px"};
         border-radius: ${props.lessRadius ? "10px" : "20px"};
@@ -22,7 +22,7 @@ const StackableContainer = (props) => (
 
       .base {
         max-width: 750px;
-        background: #62145f;
+        background: #f0a848;
         box-shadow: 0px 28px 80px rgba(0, 0, 0, 0.07),
           0px 12.7134px 39.2617px rgba(0, 0, 0, 0.0519173),
           0px 7.26461px 23.349px rgba(0, 0, 0, 0.0438747),

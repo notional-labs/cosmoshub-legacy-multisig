@@ -21,18 +21,18 @@ const Button = (props) => (
       .button {
         display: block;
         border-radius: 10px;
-        background: rgba(255, 255, 255, 0.15);
+        background: #ff9f40;
         border: none;
         padding: 12px 0;
         font-size: 1rem;
-        color: white;
+        color: #483018;
         font-style: italic;
         margin-top: 20px;
         text-decoration: none;
         text-align: center;
       }
       .primary {
-        border: 2px solid white;
+        border: 2px solid #404040;
       }
 
       button:first-child {

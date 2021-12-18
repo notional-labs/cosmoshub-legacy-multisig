@@ -25,12 +25,12 @@ const Input = (props) => (
       }
 
       input {
-        background: #722d6f;
+        background: white;
         border: 2px solid #ffffff;
         box-sizing: border-box;
         border-radius: 9px;
 
-        color: white;
+        color: #424242;
         padding: 10px 5px;
       }
 

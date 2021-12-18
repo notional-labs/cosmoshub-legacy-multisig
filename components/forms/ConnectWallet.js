@@ -20,10 +20,12 @@ class TransactionForm extends React.Component {
           onClick={() => {
             this.props.onConnect(true);
           }}
+          style={{backgroundColor: '#ff9933'}}
         />
         <style jsx>{`
           p {
             margin-top: 15px;
+            color: #424242;
           }
         `}</style>
       </StackableContainer>
@@ -32,3 +34,4 @@ class TransactionForm extends React.Component {
 }
 
 export default withRouter(TransactionForm);
+
