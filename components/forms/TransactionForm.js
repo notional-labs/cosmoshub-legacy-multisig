@@ -13,6 +13,8 @@ import { recoverPersonalSignature } from '@metamask/eth-sig-util'
 import { toChecksumAddress } from 'ethereumjs-util'
 
 import { getUint8ArrayPubKey } from '../../lib/metamaskHelpers'
+import { makeSignDoc } from '@cosmjs/amino';
+
 class TransactionForm extends React.Component {
   constructor(props) {
     super(props);
@@ -26,7 +28,7 @@ class TransactionForm extends React.Component {
       addressError: "",
     };
 
-    this.createTransaction = this.createTransaction.bind(this);
+    this.createSignDoc = this.createSignDoc.bind(this);
   }
 
   handleChange = (e) => {
@@ -45,7 +47,7 @@ class TransactionForm extends React.Component {
       publicKey: pubkey,
       modeInfo: {
         single: {
-          mode: SignMode.SIGN_MODE_LEGACY_AMINO_JSON ,
+          mode: "" ,
         },
       },
       sequence: Long.fromNumber(sequence),
@@ -88,10 +90,10 @@ class TransactionForm extends React.Component {
     setTransactionHash(result.transactionHash);
   };
   
-  createTransaction = (toAddress, amount, gas) => {
+  createSignDoc = (toAddress, amount, gas) => {
     const msgSend = {
-      fromAddress: this.props.address,
-      toAddress: toAddress,
+      from_address: this.props.address,
+      to_address: toAddress,
       amount: coins(amount * 1000000, process.env.NEXT_PUBLIC_DENOM),
     };
     const msg = {
@@ -105,20 +107,15 @@ class TransactionForm extends React.Component {
     };
     console.log("account on chain", this.props.accountOnChain)
     
-    return {
-      accountNumber: this.props.accountOnChain.accountNumber ? this.props.accountOnChain.accountNumber : 0,
-      sequence: this.props.accountOnChain.sequence ? this.props.accountOnChain.sequence : 0,
-      chainId: process.env.NEXT_PUBLIC_CHAIN_ID,
-      msgs: [msg],
-      fee: fee,
-      memo: this.state.memo,
-    };
+    return makeSignDoc([msg], fee, "dig-1", "", this.props.accountOnChain.accountNumber, this.props.accountOnChain.sequence)
   };
 
+  
+  
   handleCreate = async () => {
     if (this.state.toAddress.length === 42) {
       this.setState({ processing: true });
-      const tx = this.createTransaction(
+      const signDoc = this.createSignDoc(
         this.state.toAddress,
         this.state.amount,
         this.state.gas
@@ -127,7 +124,7 @@ class TransactionForm extends React.Component {
 
       // send to metamask to sign
       let from = this.props.address
-      let msgParams = JSON.stringify(tx)
+      let msgParams = JSON.stringify(signDoc)
       let params = [from, msgParams];
       let method = 'personal_sign';
 
