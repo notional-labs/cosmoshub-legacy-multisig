@@ -16,32 +16,32 @@ export default () => {
         <StackableContainer lessPadding>
           <h1 className="title">Dig conversion tool</h1>
         </StackableContainer>
-          {walletConnected ? (
-              <AddressForm
-                web3 = { web3 }
-                address = { address }
-                accountOnChain = { {
-                  accountNumber : 0,
-                  sequence : 0
-                } }
-                holdings = { balance }
-              />
-            ): (
-              <FindMultisigForm 
-                onSuccess = {(web3, address, balance) => {
-                  setWalletConnected(true);
-                  setWeb3(web3);
-                  setAddress(address);
-                  setBalance(balance);
-                }}
-                onFailure = {
-                  () => {
-                    alert("fail to fetch your account");
-                  }
+        {walletConnected ? (
+            <AddressForm
+              web3 = { web3 }
+              address = { address }
+              accountOnChain = { {
+                accountNumber : 0,
+                sequence : 0
+              } }
+              holdings = { balance }
+            />
+          ): (
+            <FindMultisigForm 
+              onSuccess = {(web3, address, balance) => {
+                setWalletConnected(true);
+                setWeb3(web3);
+                setAddress(address);
+                setBalance(balance);
+              }}
+              onFailure = {
+                () => {
+                  alert("fail to fetch your account");
                 }
-              />
-            )
-          }
+              }
+            />
+          )
+        }
       </StackableContainer>
     </Page>
   )
