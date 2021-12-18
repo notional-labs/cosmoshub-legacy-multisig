@@ -51,7 +51,7 @@ const Page = (props) => {
             sans-serif;
           color: white;
           min-height: 100vh;
-          background: #383838;
+          background: #262626;
           font-size: 16px;
           margin: 0;
         }

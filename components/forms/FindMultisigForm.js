@@ -104,11 +104,8 @@ class FindMultisigForm extends React.Component {
           />
           <br/>
           {this.state.querySuccess ? (
-<<<<<<< HEAD
             <p style={{color: '#424242'}}>Your balance is {this.state.balance}</p>
-=======
-            <p>Your balance is {this.state.balance} dig</p>
->>>>>>> 9001357e38f3a3a2145ecee4d41130a6a50bdfbe
+
           ) : 
           (
             <></>
