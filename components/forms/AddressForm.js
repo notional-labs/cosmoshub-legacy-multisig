@@ -59,7 +59,7 @@ class AddressForm extends React.Component {
                     </div>
                     <div className="col-2">
                       <StackableContainer lessPadding>
-                        <h2>Conversion</h2>
+                        <h2>Conversion (Under construction)</h2>
                         <p>
                           Transfer dig from BSC wallet to DIG wallet
                         </p>
