@@ -80,7 +80,7 @@ class FindMultisigForm extends React.Component {
           <Input
             onChange={this.handleChange}
             value={this.state.address}
-            label="Dig Address"
+            label="Quick query balance for address"
             name="address"
             placeholder=""
           />
