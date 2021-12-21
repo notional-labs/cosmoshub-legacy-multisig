@@ -8,7 +8,6 @@ import Input from "../../components/inputs/Input";
 import StackableContainer from "../layout/StackableContainer";
 import { AuthInfo, TxBody, TxRaw } from "cosmjs-types/cosmos/tx/v1beta1/tx";
 import { StargateClient } from "@cosmjs/stargate";
-
 import { fromBase64 } from "@cosmjs/encoding"
 
 import { recoverPersonalSignature } from '@metamask/eth-sig-util'
@@ -18,6 +17,10 @@ import { getUint8ArrayPubKey } from '../../lib/metamaskHelpers'
 import { makeSignDoc } from '@cosmjs/amino';
 import { Any } from "cosmjs-types/google/protobuf/any";
 import { PubKey } from "cosmjs-types/cosmos/crypto/secp256k1/keys";
+import Long from "long";
+
+
+
 import {
   Registry,
   defaultRegistryTypes
@@ -59,7 +62,7 @@ class TransactionForm extends React.Component {
   //   });
   // }
 
-  getTxBodyBytesForSend = (fromAddress, toAddress, amount) => {
+  getTxBodyBytesForSend = (fromAddress, toAddress, amount, memo) => {
     const registry = createDefaultRegistry()
     let encodeObject =  {
       typeUrl: "/cosmos.tx.v1beta1.TxBody",
@@ -70,7 +73,7 @@ class TransactionForm extends React.Component {
             value: {
               fromAddress: fromAddress,
               toAddress: toAddress,
-              amount: amount,
+              amount: [amount],
             },
           },
         ],
@@ -97,12 +100,12 @@ class TransactionForm extends React.Component {
       sequence: Long.fromNumber(sequence),
     };
     
-
+    console.log("gas",)
     const authInfo = AuthInfo.fromPartial({
       signerInfos: [signerInfo],
       fee: {
         amount: [...fee.amount],
-        gasLimit: (fee.gas),
+        gasLimit: Long.fromString(fee.gas),
       },
     });
   
@@ -170,7 +173,7 @@ class TransactionForm extends React.Component {
 
       const fee = {
         amount: coins(6000, process.env.NEXT_PUBLIC_DENOM),
-        gas: coins(2000000, process.env.NEXT_PUBLIC_DENOM),
+        gas: "200000",
       };
 
       // send to metamask to sign
@@ -227,7 +230,8 @@ class TransactionForm extends React.Component {
           }
         }
       ).then(()=>{
-        const bodyBytes = this.getTxBodyBytesForSend(from, this.state.toAddress, this.state.amount)
+        const bodyBytes = this.getTxBodyBytesForSend(from, this.state.toAddress, this.state.amount, this.state.memo)
+        console.log(bodyBytes)
         const signedTx = this.makesignedTx(
           pubKey,
           this.sequence,
