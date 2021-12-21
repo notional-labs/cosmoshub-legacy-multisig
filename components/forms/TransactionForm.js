@@ -1,5 +1,4 @@
 import axios from "axios";
-import { coins } from "@cosmjs/launchpad";
 import React from "react";
 import { withRouter } from "next/router";
 import { encode, decode } from "uint8-to-base64";
@@ -7,9 +6,8 @@ import Button from "../../components/inputs/Button";
 import Input from "../../components/inputs/Input";
 import StackableContainer from "../layout/StackableContainer";
 import { AuthInfo, TxBody, TxRaw } from "cosmjs-types/cosmos/tx/v1beta1/tx";
-import { StargateClient } from "@cosmjs/stargate";
-import { fromBase64 } from "@cosmjs/encoding"
-
+import { StargateClient, defaultRegistryTypes } from "@cosmjs/stargate";
+import { fromBase64,toBase64 } from "@cosmjs/encoding"
 import { recoverPersonalSignature } from '@metamask/eth-sig-util'
 import { toChecksumAddress } from 'ethereumjs-util'
 
@@ -18,17 +16,21 @@ import { makeSignDoc } from '@cosmjs/amino';
 import { Any } from "cosmjs-types/google/protobuf/any";
 import { PubKey } from "cosmjs-types/cosmos/crypto/secp256k1/keys";
 import Long from "long";
+import {makeSignDocJsonString} from "../types/Sign"
+import {makeAuthInfoBytes, makeEthPubkeyFromByte} from "../types/Auth"
+import {makeSendMsg} from "../types/Msg"
+import {makeTxBodyBytes} from "../types/Tx"
+
+
 
 
 
 import {
   Registry,
-  defaultRegistryTypes
+  coins,
+  decodeTxRaw,
+  encodePubkey
 } from "@cosmjs/proto-signing";
-
-function createDefaultRegistry() {
-  return new Registry(defaultRegistryTypes);
-}
 
 class TransactionForm extends React.Component {
   constructor(props) {
@@ -48,7 +50,6 @@ class TransactionForm extends React.Component {
   fromHexString = (hexString) =>{
     new Uint8Array(hexString.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
   }
-
   handleChange = (e) => {
     this.setState({
       [e.target.name]: e.target.value,
@@ -66,24 +67,57 @@ class TransactionForm extends React.Component {
   // }
 
   getTxBodyBytesForSend = (fromAddress, toAddress, amount, memo) => {
-    const registry = createDefaultRegistry()
-    let encodeObject =  {
+
+    // const registry = new Registry()
+    // let encodeObject =  {
+    //   typeUrl: "/cosmos.tx.v1beta1.TxBody",
+    //   value: {
+    //     messages: [
+    //       {
+    //         typeUrl: "/cosmos.bank.v1beta1.MsgSend",
+    //         value: {
+    //           fromAddress: fromAddress,
+    //           toAddress: toAddress,
+    //           amount: [
+    //             {
+    //               denom: process.env.NEXT_PUBLIC_DENOM,
+    //               amount: amount,
+    //             },
+    //           ],
+    //         },
+    //       },
+    //     ],
+    //     memo: memo,
+    //   },
+    // }
+    // console.log("mmm")
+    // console.log(encodeObject)
+    // const ans = registry.encode(encodeObject)
+    // return ans
+    const registry = new Registry();
+    let txBodyFields = {
       typeUrl: "/cosmos.tx.v1beta1.TxBody",
       value: {
         messages: [
           {
             typeUrl: "/cosmos.bank.v1beta1.MsgSend",
             value: {
-              fromAddress: fromAddress,
-              toAddress: toAddress,
-              amount: [amount],
+              fromAddress: "abc",
+              toAddress: ":abc",
+              amount: [
+                {
+                  denom: "ucosm",
+                  amount: "1234567",
+                },
+              ],
             },
           },
         ],
-        memo: memo,
       },
-    }
-    return registry.encode(encodeObject)
+    };
+    const txBodyBytes = registry.encode(txBodyFields);
+    return txBodyBytes
+
   }
 
   makesignedTx = (
@@ -93,95 +127,42 @@ class TransactionForm extends React.Component {
     bodyBytes,
     signatures,
   ) => {
-    const signerInfo = {
-      publicKey: pubkey,
-      modeInfo: {
-        single: {
-          mode: "SIGN_MODE_EIP191_LEGACY_JSON" ,
-        },
-      },
-      sequence: Long.fromNumber(sequence),
-    };
-    
-    console.log("gas",)
-    const authInfo = AuthInfo.fromPartial({
-      signerInfos: [signerInfo],
-      fee: {
-        amount: [...fee.amount],
-        gasLimit: Long.fromString(fee.gas),
-      },
-    });
-  
-  
+    const mode = "SIGN_MODE_EIP191_LEGACY_JSON"
+    const authInfoBytes = makeAuthInfoBytes(fee, pubkey, mode, sequence);
     const signedTx = TxRaw.fromPartial({
+      authInfoBytes: authInfoBytes,
       bodyBytes: bodyBytes,
-      authInfoBytes: AuthInfo.encode(authInfo).finish(),
       signatures: signatures,
     });
   
     return signedTx;
   };
-
-  // broadcastSingedTx = async (bodyBytes) => {
-  //   const signedTx = makesignedTx(
-  //     accountOnChain.pubkey,
-  //     txInfo.sequence,
-  //     txInfo.fee,
-  //     bodyBytes,
-  //     signatures
-  //   );
-  //   const broadcaster = await StargateClient.connect(process.env.NEXT_PUBLIC_NODE_ADDRESS);
-  //   const result = await broadcaster.broadcastTx(
-  //     Uint8Array.from(TxRaw.encode(signedTx).finish())
-  //   );
-  //   console.log(result);
-  //   const res = await axios.post(`/api/transaction/${transactionID}`, {
-  //     txHash: result.transactionHash,
-  //   });
-  //   setTransactionHash(result.transactionHash);
-  // };
   
-  createSignDoc = (toAddress, amount, gas) => {
-    const msgSend = {
-      from_address: this.props.address,
-      to_address: toAddress,
-      amount: coins(amount * 1000000, process.env.NEXT_PUBLIC_DENOM),
-    };
-    const msg = {
-      typeUrl: "/cosmos.bank.v1beta1.MsgSend",
-      value: msgSend,
-    };
-    const gasLimit = gas;
-    const fee = {
-      amount: coins(6000, process.env.NEXT_PUBLIC_DENOM),
-      gas: gasLimit.toString(),
-    };
-    console.log("account on chain", this.props.accountOnChain)
+  createSignDoc = (toAddress, amount, fee) => {
+    const msg = makeSendMsg(this.props.address, toAddress, amount, process.env.NEXT_PUBLIC_DENOM)
+
     console.log(this.props.state)
-    return makeSignDoc([msg], fee, "dig-1", this.state.memo, this.props.accountOnChain.accountNumber, this.props.accountOnChain.sequence)
+    return makeSignDocJsonString(msg, fee, "dig-1", this.state.memo, this.props.accountOnChain.accountNumber, this.props.accountOnChain.sequence)
   };
 
   
-  
   handleCreate = async () => {
-    console.log(this.state)
     if (this.state.toAddress.length === 42) {
+      const fee = {
+        amount: coins(2000, process.env.NEXT_PUBLIC_DENOM),
+        gas: this.state.gas.toString(),
+      };
+
       this.setState({ processing: true });
       const signDoc = this.createSignDoc(
         this.state.toAddress,
         this.state.amount,
-        this.state.gas
+        fee
       );
-      console.log(signDoc);
-
-      const fee = {
-        amount: coins(6000, process.env.NEXT_PUBLIC_DENOM),
-        gas: "200000",
-      };
 
       // send to metamask to sign
       let from = this.props.address
-      let msgParams = JSON.stringify(signDoc)
+      let msgParams = signDoc
       let params = [from, msgParams];
       let method = 'personal_sign';
 
@@ -209,11 +190,7 @@ class TransactionForm extends React.Component {
             data: msgParams,
             signature: result.result
           })
-
-          /*
-          console.log("pubkey = " + pubKey)
-          console.log("cosmos pubkey = " + fromBase64("A7lEP4eu1Hh+bySk/H3wlX7VcelIYNVu7/gO+Uo3c1wi"))
-          */
+          console.log(pubKey)
 
           // verify signer
           const recovered = recoverPersonalSignature({
@@ -234,16 +211,18 @@ class TransactionForm extends React.Component {
         }
       ).then(()=>{
         const bodyBytes = this.getTxBodyBytesForSend(from, this.state.toAddress, this.state.amount, this.state.memo)
-        console.log(bodyBytes)
         const signatures = this.fromHexString(signature_metamask)
+        console.log(signatures)
         const signedTx = this.makesignedTx(
-          pubKey,
+          makeEthPubkeyFromByte(pubKey),
           this.sequence,
           fee,
           bodyBytes,
           signatures
         )
-  
+        console.log("abc")
+        console.log(signedTx)
+        console.log(decodeTxRaw(signedTx))
         StargateClient.connect(process.env.NEXT_PUBLIC_NODE_ADDRESS).then(
           (broadcaster) => {
             const ans = broadcaster.broadcastTx(

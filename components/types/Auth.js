@@ -1,7 +1,7 @@
 import { Any } from "cosmjs-types/google/protobuf/any";
 import { PubKey } from "cosmjs-types/cosmos/crypto/secp256k1/keys";
 import Long from "long";
-
+import {SignerInfo, AuthInfo} from "cosmjs-types/cosmos/tx/v1beta1/tx";
 
 export function makeEthPubkeyFromByte (pubkeyBytes) {
     const pubkeyProto = PubKey.fromPartial({
