@@ -82,7 +82,7 @@ class FindMultisigForm extends React.Component {
         </StackableContainer>
         <StackableContainer lessPadding lessMargin>
           <Button
-            label="Connect metamask wallet"
+            label="Connect Metamask wallet"
             onClick={this.handleConnect}
             primary
           />
