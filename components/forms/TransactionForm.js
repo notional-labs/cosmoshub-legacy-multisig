@@ -42,6 +42,13 @@ class TransactionForm extends React.Component {
 
     this.createSignDoc = this.createSignDoc.bind(this);
   }
+
+  handleChange = (e) => {
+    this.setState({
+      [e.target.name]: e.target.value,
+    });
+  };
+
   // encodeEthPubkey = (pubkeyBytes) => {
   //   const pubkeyProto = PubKey.fromPartial({
   //     key: pubkeyBytes,
@@ -73,11 +80,6 @@ class TransactionForm extends React.Component {
     return registry.encode(encodeObject)
   }
 
-  handleChange = (e) => {
-    this.setState({
-      [e.target.name]: e.target.value,
-    });
-  };
   makesignedTx = (
     pubkey,
     sequence,
@@ -150,12 +152,13 @@ class TransactionForm extends React.Component {
     };
     console.log("account on chain", this.props.accountOnChain)
     console.log(this.props.state)
-    return makeSignDoc([msg], fee, "dig-1", this.props.state.memo, this.props.accountOnChain.accountNumber, this.props.accountOnChain.sequence)
+    return makeSignDoc([msg], fee, "dig-1", this.state.memo, this.props.accountOnChain.accountNumber, this.props.accountOnChain.sequence)
   };
 
   
   
   handleCreate = async () => {
+    console.log(this.state)
     if (this.state.toAddress.length === 42) {
       this.setState({ processing: true });
       const signDoc = this.createSignDoc(
