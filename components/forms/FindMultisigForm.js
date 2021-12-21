@@ -4,6 +4,7 @@ import Button from "../inputs/Button";
 import StackableContainer from "../layout/StackableContainer";
 import Input from "../inputs/Input";
 import { getWeb3Instance } from "../../lib/metamaskHelpers";
+import { fetchAccount } from "../../lib/multisigHelpers";
 import axios from "axios";
 
 class FindMultisigForm extends React.Component {
@@ -61,13 +62,28 @@ class FindMultisigForm extends React.Component {
 
     const address = (await web3.eth.getAccounts())[0];
 
+    // try to get it on chain
+    let account = await fetchAccount(address);
+    console.log(JSON.stringify(account));
+    let pubKey = null;
+    let accountOnChain = {
+      accountNumber: 0,
+      sequence: 0
+    }
+    if(account){
+      // account existed on chain
+      pubKey = account.public_key;
+      accountOnChain.accountNumber = account.account_number;
+      accountOnChain.sequence = account.sequence;
+    }
+
     let balance = await this.handleQueryBalanceOnRest(address);
     if(!balance){
       this.props.onFailure();
       return;
     }
 
-    this.props.onSuccess(web3, address, balance);
+    this.props.onSuccess(web3, address, balance, accountOnChain, pubKey);
   };
 
   render() {
@@ -75,7 +91,7 @@ class FindMultisigForm extends React.Component {
       <StackableContainer>
         <StackableContainer lessPadding>
           <p style={{color: '#cc4400'}}>
-            Already have a 0x address? Enter it below. If it’s a valid
+            Already have a 0x address? Enter it below. If it`s a valid
             address, you will be able to transfer your dig from 0x format 
             address to dig1 format address
           </p>

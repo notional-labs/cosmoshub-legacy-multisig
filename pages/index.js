@@ -9,6 +9,8 @@ export default () => {
   const [web3, setWeb3] = useState(null);
   const [address, setAddress] = useState(null);
   const [balance, setBalance] = useState('0');
+  const [accountOnChain, setAccountOnChain] = useState(null);
+  const [pubKey, setPubKey] = useState(null);
 
   return (
     <Page>
@@ -27,19 +29,19 @@ export default () => {
           <AddressForm
             web3={web3}
             address={address}
-            accountOnChain={{
-              accountNumber: 0,
-              sequence: 0
-            }}
+            accountOnChain={accountOnChain}
             holdings={balance}
+            pubKey={pubKey}
           />
         ) : (
           <FindMultisigForm
-            onSuccess={(web3, address, balance) => {
+            onSuccess={(web3, address, balance, accountOnChain, pubKey) => {
               setWalletConnected(true);
               setWeb3(web3);
               setAddress(address);
               setBalance(balance);
+              setAccountOnChain(accountOnChain)
+              setPubKey(pubKey);
             }}
             onFailure={
               () => {

@@ -48,6 +48,7 @@ class AddressForm extends React.Component {
                     accountOnChain={this.props.accountOnChain}
                     web3={this.props.web3}
                     holdings={this.props.holdings}
+                    pubKey={this.props.pubKey}
                     closeForm={() => {
                       this.setState({showTxForm : false})
                     }}
