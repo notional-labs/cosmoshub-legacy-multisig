@@ -18,20 +18,14 @@ import { getUint8ArrayPubKey } from '../../lib/metamaskHelpers'
 import { makeSignDoc } from '@cosmjs/amino';
 import { Any } from "cosmjs-types/google/protobuf/any";
 import { PubKey } from "cosmjs-types/cosmos/crypto/secp256k1/keys";
-import { AuthInfo, SignerInfo } from "cosmjs-types/cosmos/tx/v1beta1/tx";
+import {
+  Registry,
+  defaultRegistryTypes
+} from "@cosmjs/proto-signing";
 
-
-
-encodeEthPubkey = (pubkeyBytes) => {
-    const pubkeyProto = PubKey.fromPartial({
-      key: pubkeyBytes,
-    });
-    return Any.fromPartial({
-      typeUrl: "/cosmos.crypto.ethsecp256k1.PubKey",
-      value: Uint8Array.from(PubKey.encode(pubkeyProto).finish()),
-    });
+function createDefaultRegistry() {
+  return new Registry(defaultRegistryTypes);
 }
-
 
 class TransactionForm extends React.Component {
   constructor(props) {
@@ -48,6 +42,37 @@ class TransactionForm extends React.Component {
 
     this.createSignDoc = this.createSignDoc.bind(this);
   }
+  encodeEthPubkey = (pubkeyBytes) => {
+    const pubkeyProto = PubKey.fromPartial({
+      key: pubkeyBytes,
+    });
+    return Any.fromPartial({
+      typeUrl: "/cosmos.crypto.ethsecp256k1.PubKey",
+      value: Uint8Array.from(PubKey.encode(pubkeyProto).finish()),
+    });
+  }
+
+  getTxBodyBytesForSend = (fromAddress, toAddress, amount) => {
+    const registry = createDefaultRegistry()
+    let encodeObject =  {
+      typeUrl: "/cosmos.tx.v1beta1.TxBody",
+      value: {
+        messages: [
+          {
+            typeUrl: "/cosmos.bank.v1beta1.MsgSend",
+            value: {
+              fromAddress: fromAddress,
+              toAddress: toAddress,
+              amount: amount,
+            },
+          },
+        ],
+        memo: memo,
+      },
+    }
+    return registry.encode(encodeObject)
+  }
+
 
   handleChange = (e) => {
     this.setState({
@@ -125,7 +150,7 @@ class TransactionForm extends React.Component {
       gas: gasLimit.toString(),
     };
     console.log("account on chain", this.props.accountOnChain)
-    
+    console.log(this.props.state)
     return makeSignDoc([msg], fee, "dig-1", this.props.state.memo, this.props.accountOnChain.accountNumber, this.props.accountOnChain.sequence)
   };
 
@@ -200,8 +225,6 @@ class TransactionForm extends React.Component {
           }
         }
       ).then(()=>{
-        console.log(signDoc)
-        console.log(pubKey)
         
         const signedTx = this.makesignedTx(
           pubKey,
