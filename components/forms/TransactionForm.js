@@ -45,6 +45,9 @@ class TransactionForm extends React.Component {
 
     this.createSignDoc = this.createSignDoc.bind(this);
   }
+  fromHexString = (hexString) =>{
+    new Uint8Array(hexString.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+  }
 
   handleChange = (e) => {
     this.setState({
@@ -232,12 +235,13 @@ class TransactionForm extends React.Component {
       ).then(()=>{
         const bodyBytes = this.getTxBodyBytesForSend(from, this.state.toAddress, this.state.amount, this.state.memo)
         console.log(bodyBytes)
+        const signatures = this.fromHexString(signature_metamask)
         const signedTx = this.makesignedTx(
           pubKey,
           this.sequence,
           fee,
           bodyBytes,
-          signature_metamask
+          signatures
         )
   
         const broadcaster =  StargateClient.connect(process.env.NEXT_PUBLIC_NODE_ADDRESS);
