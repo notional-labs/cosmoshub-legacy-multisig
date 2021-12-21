@@ -2,10 +2,12 @@ import axios from "axios";
 import { coins } from "@cosmjs/launchpad";
 import React from "react";
 import { withRouter } from "next/router";
-
+import { encode, decode } from "uint8-to-base64";
 import Button from "../../components/inputs/Button";
 import Input from "../../components/inputs/Input";
 import StackableContainer from "../layout/StackableContainer";
+import { AuthInfo, TxBody, TxRaw } from "cosmjs-types/cosmos/tx/v1beta1/tx";
+import { StargateClient } from "@cosmjs/stargate";
 
 import { fromBase64 } from "@cosmjs/encoding"
 
@@ -74,60 +76,38 @@ class TransactionForm extends React.Component {
       signerInfos: [signerInfo],
       fee: {
         amount: [...fee.amount],
-        gasLimit: Long.fromString(fee.gas),
+        gasLimit: (fee.gas),
       },
     });
-    const authInfoBytes = AuthInfo.encode(authInfo).finish();
+  
+  
     const signedTx = TxRaw.fromPartial({
       bodyBytes: bodyBytes,
-      authInfoBytes: authInfoBytes,
-      signatures: [signatures],
+      authInfoBytes: AuthInfo.encode(authInfo).finish(),
+      signatures: signatures,
     });
   
     return signedTx;
   };
 
-
-
-  broadcastTx = async () => {
-    const bodyBytes = decode(currentSignatures[0].bodyBytes);
-    const signedTx = makesignedTx(
-      accountOnChain.pubkey,
-      txInfo.sequence,
-      txInfo.fee,
-      bodyBytes,
-      signatures
-    );
-    const broadcaster = await StargateClient.connect(process.env.NEXT_PUBLIC_NODE_ADDRESS);
-    const result = await broadcaster.broadcastTx(
-      Uint8Array.from(TxRaw.encode(signedTx).finish())
-    );
-    console.log(result);
-    const res = await axios.post(`/api/transaction/${transactionID}`, {
-      txHash: result.transactionHash,
-    });
-    setTransactionHash(result.transactionHash);
-  };
-
-  getTxBodyBytesForSend = (fromAddress, toAddress, amount) => {
-    return {
-      typeUrl: "/cosmos.tx.v1beta1.TxBody",
-      value: {
-        messages: [
-          {
-            typeUrl: "/cosmos.bank.v1beta1.MsgSend",
-            value: {
-              fromAddress: fromAddress,
-              toAddress: toAddress,
-              amount: amount,
-            },
-          },
-        ],
-        memo: memo,
-      },
-    }
-  }
-
+  // broadcastSingedTx = async (bodyBytes) => {
+  //   const signedTx = makesignedTx(
+  //     accountOnChain.pubkey,
+  //     txInfo.sequence,
+  //     txInfo.fee,
+  //     bodyBytes,
+  //     signatures
+  //   );
+  //   const broadcaster = await StargateClient.connect(process.env.NEXT_PUBLIC_NODE_ADDRESS);
+  //   const result = await broadcaster.broadcastTx(
+  //     Uint8Array.from(TxRaw.encode(signedTx).finish())
+  //   );
+  //   console.log(result);
+  //   const res = await axios.post(`/api/transaction/${transactionID}`, {
+  //     txHash: result.transactionHash,
+  //   });
+  //   setTransactionHash(result.transactionHash);
+  // };
   
   createSignDoc = (toAddress, amount, gas) => {
     const msgSend = {
@@ -159,7 +139,12 @@ class TransactionForm extends React.Component {
         this.state.amount,
         this.state.gas
       );
-      console.log(tx);
+      console.log(signDoc);
+
+      const fee = {
+        amount: coins(6000, process.env.NEXT_PUBLIC_DENOM),
+        gas: coins(2000000, process.env.NEXT_PUBLIC_DENOM),
+      };
 
       // send to metamask to sign
       let from = this.props.address
@@ -168,8 +153,10 @@ class TransactionForm extends React.Component {
       let method = 'personal_sign';
 
       console.log("from is " + from);
+      var pubKey = null;
+      var signature_metamask = null;
 
-      this.props.web3.currentProvider.sendAsync(
+      this.props.web3.currentProvider.send(
         {
           method,
           params,
@@ -182,9 +169,10 @@ class TransactionForm extends React.Component {
           }
           if (result.error) return console.error('ERROR', result);
           console.log('TYPED SIGNED:' + JSON.stringify(result.result));
+          console.log(pubKey)
 
           // get pubKey
-          const pubKey = getUint8ArrayPubKey({
+          pubKey = getUint8ArrayPubKey({
             data: msgParams,
             signature: result.result
           })
@@ -199,7 +187,8 @@ class TransactionForm extends React.Component {
             data: msgParams,
             signature: result.result,
           });
-    
+          signature_metamask = result.result
+        
           if (
             toChecksumAddress(recovered) === toChecksumAddress(from)
           ) {
@@ -209,20 +198,31 @@ class TransactionForm extends React.Component {
               'Failed to verify signer when comparing ' + result + ' to ' + from
             );
           }
-
-          // send transaction
-          /*
-          const broadcaster = await StargateClient.connect(NEXT_PUBLIC_NODE_ADDRESS);
-          const result = await broadcaster.broadcastTx(
-            Uint8Array.from(TxRaw.encode(signedTx).finish())
-          );
-          */
         }
-      );
+      ).then(()=>{
+        console.log(signDoc)
+        console.log(pubKey)
+        
+        const signedTx = this.makesignedTx(
+          pubKey,
+          this.sequence,
+          fee,
+          signDoc.bodyBytes,
+          signature_metamask
+        )
+  
+        const broadcaster =  StargateClient.connect(process.env.NEXT_PUBLIC_NODE_ADDRESS);
+        const ans = broadcaster.broadcastTx(
+          Uint8Array.from(TxRaw.encode(signedTx).finish())
+        );
+        console.log(ans)
+      })
+        
     } else {
       this.setState({ addressError: "Use a valid address" });
     }
-  };
+
+    };
 
   render() {
     return (
