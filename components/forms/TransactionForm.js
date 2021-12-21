@@ -244,11 +244,14 @@ class TransactionForm extends React.Component {
           signatures
         )
   
-        const broadcaster =  StargateClient.connect(process.env.NEXT_PUBLIC_NODE_ADDRESS);
-        const ans = broadcaster.broadcastTx(
-          Uint8Array.from(TxRaw.encode(signedTx).finish())
-        );
-        console.log(ans)
+        StargateClient.connect(process.env.NEXT_PUBLIC_NODE_ADDRESS).then(
+          (broadcaster) => {
+            const ans = broadcaster.broadcastTx(
+              Uint8Array.from(TxRaw.encode(signedTx).finish())
+            );
+            console.log(ans)
+          }
+        );        
       })
         
     } else {
