@@ -42,15 +42,15 @@ class TransactionForm extends React.Component {
 
     this.createSignDoc = this.createSignDoc.bind(this);
   }
-  encodeEthPubkey = (pubkeyBytes) => {
-    const pubkeyProto = PubKey.fromPartial({
-      key: pubkeyBytes,
-    });
-    return Any.fromPartial({
-      typeUrl: "/cosmos.crypto.ethsecp256k1.PubKey",
-      value: Uint8Array.from(PubKey.encode(pubkeyProto).finish()),
-    });
-  }
+  // encodeEthPubkey = (pubkeyBytes) => {
+  //   const pubkeyProto = PubKey.fromPartial({
+  //     key: pubkeyBytes,
+  //   });
+  //   return Any.fromPartial({
+  //     typeUrl: "/cosmos.crypto.ethsecp256k1.PubKey",
+  //     value: Uint8Array.from(PubKey.encode(pubkeyProto).finish()),
+  //   });
+  // }
 
   getTxBodyBytesForSend = (fromAddress, toAddress, amount) => {
     const registry = createDefaultRegistry()
@@ -72,7 +72,6 @@ class TransactionForm extends React.Component {
     }
     return registry.encode(encodeObject)
   }
-
 
   handleChange = (e) => {
     this.setState({
@@ -225,12 +224,12 @@ class TransactionForm extends React.Component {
           }
         }
       ).then(()=>{
-        
+        const bodyBytes = this.getTxBodyBytesForSend(from, this.state.toAddress, this.state.amount)
         const signedTx = this.makesignedTx(
           pubKey,
           this.sequence,
           fee,
-          signDoc.bodyBytes,
+          bodyBytes,
           signature_metamask
         )
   
