@@ -56,25 +56,7 @@ class TransactionForm extends React.Component {
       [e.target.name]: e.target.value,
     });
   };
-  
 
-  makesignedTx = (
-    pubkey,
-    sequence,
-    fee,
-    bodyBytes,
-    signatures,
-  ) => {
-    const mode = "SIGN_MODE_EIP191_LEGACY_JSON"
-    const authInfoBytes = makeAuthInfoBytes(fee, pubkey, mode, sequence);
-    const signedTx = TxRaw.fromPartial({
-      authInfoBytes: authInfoBytes,
-      bodyBytes: bodyBytes,
-      signatures: signatures,
-    });
-  
-    return signedTx;
-  };
   
   
   handleCreate = async () => {
@@ -100,16 +82,21 @@ class TransactionForm extends React.Component {
 
       // bank send msg and fee and memo
       const msg = makeSendMsg(fromAddress, toAddress, amount, process.env.NEXT_PUBLIC_DENOM)
-      const fee = {
+      const gasLimit = this.state.gas.toString()
+      const stdFeeToPutIntoSignDoc = {
         amount: coins(2000, denom),
-        gas: this.state.gas.toString(),
+        gas: gasLimit,
       };
+      const fee = {
+        amount: [],
+        gasLimit: gasLimit,
+      }
       const memo = this.state.memo
 
       this.setState({ processing: true });
 
       // make signdoc and sign it with metamask
-      const signDocJsonString = makeSignDocJsonString(msg, fee, chainId, mode, accountNumber, sequence)
+      const signDocJsonString = makeSignDocJsonString(msg, stdFeeToPutIntoSignDoc, chainId, mode, accountNumber, sequence)
 
       let params = [fromAddress, signDocJsonString];
       let method = 'personal_sign';
