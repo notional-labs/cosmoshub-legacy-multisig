@@ -146,7 +146,9 @@ class TransactionForm extends React.Component {
         }
       ).then(()=>{
         const ethPubKey = makeEthPubkeyFromByte(pubKeyBytes)
-        
+        console.log(pubKeyBytes)
+        console.log("pubkey")
+        console.log(ethPubKey)
         const bodyBytes = getTxBodyBytesForSend(msg, memo, registry) 
         const authInfoBytes = makeAuthInfoBytes(fee, ethPubKey, mode, sequence)
         const signature = this.fromHexString(signature_metamask)
