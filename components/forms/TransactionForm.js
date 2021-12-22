@@ -17,9 +17,9 @@ import { Any } from "cosmjs-types/google/protobuf/any";
 import { PubKey } from "cosmjs-types/cosmos/crypto/secp256k1/keys";
 import Long from "long";
 import {makeSignDocJsonString} from "../types/Sign"
-import {makeAuthInfoBytes, makeEthPubkeyFromByte} from "../types/Auth"
+import {makeAuthInfoBytes, makeEthPubkeyFromByte} from "../types/Auth";
 import {makeSendMsg} from "../types/Msg"
-import {makeTxBodyBytes} from "../types/Tx"
+import {makeTxBodyBytes, makeRawTxBytes, getTxBodyBytesForSend} from "../types/Tx"
 
 
 
@@ -44,81 +44,19 @@ class TransactionForm extends React.Component {
       processing: false,
       addressError: "",
     };
-
-    this.createSignDoc = this.createSignDoc.bind(this);
   }
   fromHexString = (hexString) =>{
-    new Uint8Array(hexString.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+    if (hexString.slice(0,2) == "0x") {
+      return Uint8Array.from(Buffer.from(hexString.slice(2), 'hex'));
+    }
+    return Uint8Array.from(Buffer.from(hexString, 'hex'));
   }
   handleChange = (e) => {
     this.setState({
       [e.target.name]: e.target.value,
     });
   };
-
-  // encodeEthPubkey = (pubkeyBytes) => {
-  //   const pubkeyProto = PubKey.fromPartial({
-  //     key: pubkeyBytes,
-  //   });
-  //   return Any.fromPartial({
-  //     typeUrl: "/cosmos.crypto.ethsecp256k1.PubKey",
-  //     value: Uint8Array.from(PubKey.encode(pubkeyProto).finish()),
-  //   });
-  // }
-
-  getTxBodyBytesForSend = (fromAddress, toAddress, amount, memo) => {
-
-    // const registry = new Registry()
-    // let encodeObject =  {
-    //   typeUrl: "/cosmos.tx.v1beta1.TxBody",
-    //   value: {
-    //     messages: [
-    //       {
-    //         typeUrl: "/cosmos.bank.v1beta1.MsgSend",
-    //         value: {
-    //           fromAddress: fromAddress,
-    //           toAddress: toAddress,
-    //           amount: [
-    //             {
-    //               denom: process.env.NEXT_PUBLIC_DENOM,
-    //               amount: amount,
-    //             },
-    //           ],
-    //         },
-    //       },
-    //     ],
-    //     memo: memo,
-    //   },
-    // }
-    // console.log("mmm")
-    // console.log(encodeObject)
-    // const ans = registry.encode(encodeObject)
-    // return ans
-    const registry = new Registry();
-    let txBodyFields = {
-      typeUrl: "/cosmos.tx.v1beta1.TxBody",
-      value: {
-        messages: [
-          {
-            typeUrl: "/cosmos.bank.v1beta1.MsgSend",
-            value: {
-              fromAddress: "abc",
-              toAddress: ":abc",
-              amount: [
-                {
-                  denom: "ucosm",
-                  amount: "1234567",
-                },
-              ],
-            },
-          },
-        ],
-      },
-    };
-    const txBodyBytes = registry.encode(txBodyFields);
-    return txBodyBytes
-
-  }
+  
 
   makesignedTx = (
     pubkey,
@@ -138,43 +76,53 @@ class TransactionForm extends React.Component {
     return signedTx;
   };
   
-  createSignDoc = (toAddress, amount, fee) => {
-    const msg = makeSendMsg(this.props.address, toAddress, amount, process.env.NEXT_PUBLIC_DENOM)
-
-    console.log(this.props.state)
-    return makeSignDocJsonString(msg, fee, "dig-1", this.state.memo, this.props.accountOnChain.accountNumber, this.props.accountOnChain.sequence)
-  };
-
   
   handleCreate = async () => {
     if (this.state.toAddress.length === 42) {
+      const registry = new Registry();
+
+      // node to broadcast to
+      const node = process.env.NEXT_PUBLIC_NODE_ADDRESS
+
+      // sign doc params
+      const chainId = process.env.NEXT_PUBLIC_CHAIN_ID
+      
+      // msg send params
+      const fromAddress = "0x5050A4F4b3f9338C3472dcC01A87C76A144b3c9c"
+      const toAddress = this.state.toAddress
+      const amount = parseInt(this.state.amount)
+      const denom = process.env.NEXT_PUBLIC_DENOM
+
+      // auth info
+      const mode = "SIGN_MODE_EIP191_LEGACY_JSON"
+      const accountNumber = this.props.accountOnChain.accountNumber
+      const sequence = this.props.accountOnChain.sequence
+
+      // bank send msg and fee and memo
+      const msg = makeSendMsg(fromAddress, toAddress, amount, process.env.NEXT_PUBLIC_DENOM)
       const fee = {
-        amount: coins(2000, process.env.NEXT_PUBLIC_DENOM),
+        amount: coins(2000, denom),
         gas: this.state.gas.toString(),
       };
+      const memo = this.state.memo
 
       this.setState({ processing: true });
-      const signDoc = this.createSignDoc(
-        this.state.toAddress,
-        this.state.amount,
-        fee
-      );
 
-      // send to metamask to sign
-      let from = this.props.address
-      let msgParams = signDoc
-      let params = [from, msgParams];
+      // make signdoc and sign it with metamask
+      const signDocJsonString = makeSignDocJsonString(msg, fee, chainId, mode, accountNumber, sequence)
+
+      let params = [fromAddress, signDocJsonString];
       let method = 'personal_sign';
 
-      console.log("from is " + from);
-      var pubKey = null;
+      console.log("from is " + fromAddress);
+      var pubKeyBytes = null;
       var signature_metamask = null;
 
       this.props.web3.currentProvider.send(
         {
           method,
           params,
-          from,
+          fromAddress,
         },
         function (err, result) {
           if (err) return console.dir(err);
@@ -183,50 +131,47 @@ class TransactionForm extends React.Component {
           }
           if (result.error) return console.error('ERROR', result);
           console.log('TYPED SIGNED:' + JSON.stringify(result.result));
-          console.log(pubKey)
+          console.log(pubKeyBytes)
 
-          // get pubKey
-          pubKey = getUint8ArrayPubKey({
-            data: msgParams,
+          // get pubKey bytes
+          pubKeyBytes = getUint8ArrayPubKey({
+            data: signDocJsonString,
             signature: result.result
           })
-          console.log(pubKey)
+          console.log(pubKeyBytes)
 
           // verify signer
           const recovered = recoverPersonalSignature({
-            data: msgParams,
+            data: signDocJsonString,
             signature: result.result,
           });
           signature_metamask = result.result
-        
+          
           if (
-            toChecksumAddress(recovered) === toChecksumAddress(from)
+            toChecksumAddress(recovered) === toChecksumAddress(fromAddress)
           ) {
-            alert('Successfully recovered signer as ' + from);
+            alert('Successfully recovered signer as ' + fromAddress);
           } else {
             alert(
-              'Failed to verify signer when comparing ' + result + ' to ' + from
+              'Failed to verify signer when comparing ' + result + ' to ' + fromAddress
             );
           }
         }
       ).then(()=>{
-        const bodyBytes = this.getTxBodyBytesForSend(from, this.state.toAddress, this.state.amount, this.state.memo)
-        const signatures = this.fromHexString(signature_metamask)
-        console.log(signatures)
-        const signedTx = this.makesignedTx(
-          makeEthPubkeyFromByte(pubKey),
-          this.sequence,
-          fee,
-          bodyBytes,
-          signatures
-        )
-        console.log("abc")
-        console.log(signedTx)
-        console.log(decodeTxRaw(signedTx))
-        StargateClient.connect(process.env.NEXT_PUBLIC_NODE_ADDRESS).then(
+        const ethPubKey = makeEthPubkeyFromByte(pubKeyBytes)
+        
+        const bodyBytes = getTxBodyBytesForSend(msg, memo, registry) 
+        const authInfoBytes = makeAuthInfoBytes(fee, ethPubKey, mode, sequence)
+        const signature = this.fromHexString(signature_metamask)
+
+        const txRawBytes = makeRawTxBytes(authInfoBytes, bodyBytes, [signature])
+        
+        console.log(txRawBytes)
+        console.log(decodeTxRaw(txRawBytes))
+        StargateClient.connect(node).then(
           (broadcaster) => {
             const ans = broadcaster.broadcastTx(
-              Uint8Array.from(TxRaw.encode(signedTx).finish())
+              Uint8Array.from(txRawBytes)
             );
             console.log(ans)
           }

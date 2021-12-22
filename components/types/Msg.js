@@ -2,8 +2,8 @@ import { coins } from "@cosmjs/launchpad";
 
 export function makeSendMsg (fromAddress, toAddress, amount, denom) {
     const msgSend = {
-        from_address: fromAddress,
-        to_address: toAddress,
+        fromAddress: fromAddress,
+        toAddress: toAddress,
         amount: coins(amount, denom),
     };
     const msg = {
