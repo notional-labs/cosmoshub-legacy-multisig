@@ -6,6 +6,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "eth-crypto": "^2.1.0",
     "@cosmjs/amino": "^0.25.6",
     "@cosmjs/launchpad": "^0.25.6",
     "@cosmjs/proto-signing": "^0.25.6",

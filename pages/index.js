@@ -21,7 +21,7 @@ export default () => {
                 web3 = { web3 }
                 address = { address }
                 accountOnChain = { {
-                  accountNumber : 0,
+                  accountNumber : 8,
                   sequence : 0
                 } }
                 holdings = { balance }
@@ -34,11 +34,6 @@ export default () => {
                   setAddress(address);
                   setBalance(balance);
                 }}
-                onFailure = {
-                  () => {
-                    alert("fail to fetch your account");
-                  }
-                }
               />
             )
           }
