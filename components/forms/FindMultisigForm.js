@@ -70,6 +70,60 @@ class FindMultisigForm extends React.Component {
     this.props.onSuccess(web3, address, balance);
   };
 
+  handleAddKeplr = () => {
+    if (!window.keplr) {
+      alert("Please install keplr extension");
+      return;
+    }
+
+    window.keplr.enable("cosmoshub-4");
+    window.keplr.experimentalSuggestChain({
+      chainId: "dig",
+      chainName: "DIG",
+      rpc: process.env.NEXT_PUBLIC_NODE_ADDRESS,
+      rest: process.env.NEXT_PUBLIC_REST_ADDRESS,
+      bip44: {
+          coinType: 118,
+      },
+      bech32Config: {
+          bech32PrefixAccAddr: "dig",
+          bech32PrefixAccPub: "dig" + "pub",
+          bech32PrefixValAddr: "dig" + "valoper",
+          bech32PrefixValPub: "dig" + "valoperpub",
+          bech32PrefixConsAddr: "dig" + "valcons",
+          bech32PrefixConsPub: "dig" + "valconspub",
+      },
+      currencies: [ 
+          { 
+              coinDenom: "dig", 
+              coinMinimalDenom: "udig", 
+              coinDecimals: 6, 
+              coinGeckoId: "dig", 
+          }, 
+      ],
+      feeCurrencies: [
+          {
+              coinDenom: "dig",
+              coinMinimalDenom: "udig",
+              coinDecimals: 6,
+              coinGeckoId: "dig",
+          },
+      ],
+      stakeCurrency: {
+          coinDenom: "dig",
+          coinMinimalDenom: "udig",
+          coinDecimals: 6,
+          coinGeckoId: "dig",
+      },
+      coinType: 118,
+      gasPriceStep: {
+          low: 0.01,
+          average: 0.025,
+          high: 0.03,
+      },
+    });
+  }
+
   render() {
     return (
       <StackableContainer>
@@ -88,15 +142,15 @@ class FindMultisigForm extends React.Component {
           />
         </StackableContainer>
         <StackableContainer lessPadding lessMargin>
-        <div className="changeColor">
-          <Input
-            className="queryInput"
-            onChange={this.handleChange}
-            value={this.state.address}
-            label="Quick query balance for address"
-            name="address"
-            placeholder=""
-          />
+          <div className="changeColor">
+            <Input
+              className="queryInput"
+              onChange={this.handleChange}
+              value={this.state.address}
+              label="Quick query balance for address"
+              name="address"
+              placeholder=""
+            />
            </div>
           <Button
             label="Query"
@@ -104,12 +158,18 @@ class FindMultisigForm extends React.Component {
           />
           <br/>
           {this.state.querySuccess ? (
-            <p style={{color: '#424242'}}>Your balance is {this.state.balance}</p>
+            <p style={{color: '#424242'}}>Your balance is {this.state.balance} dig</p>
 
           ) : 
           (
             <></>
           )}
+        </StackableContainer>
+        <StackableContainer lessPadding lessMargin>
+            <Button
+              label="Add dig to Keplr wallet"
+              onClick={this.handleAddKeplr}
+            />
         </StackableContainer>
         <style jsx>{`
           .changeMargin {
