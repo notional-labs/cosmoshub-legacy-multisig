@@ -76,15 +76,15 @@ class TransactionForm extends React.Component {
       const chainId = process.env.NEXT_PUBLIC_CHAIN_ID
       
       // msg send params
-      const fromAddress = "0x3325a78425F17a7E487Eb5666b2bFd93aBb06c70"
+      const fromAddress = "0xa296C23809E4E5f1AA53520883e2D5Ea559c60b2"
       const toAddress = this.state.toAddress
       const amount = parseInt(this.state.amount)
       const denom = process.env.NEXT_PUBLIC_DENOM
 
       // auth info
       const mode = 191
-      const accountNumber = this.props.accountOnChain.accountNumber
-      const sequence = this.props.accountOnChain.sequence
+      const accountNumber = 1
+      const sequence = 1
 
       // bank send msg and fee and memo
       const [msg, signDocMsg]  = makeSendMsg(fromAddress, toAddress, amount, process.env.NEXT_PUBLIC_DENOM)
@@ -103,7 +103,8 @@ class TransactionForm extends React.Component {
 
       // make signdoc and sign it with metamask
       const signDocJsonString = makeSignDocJsonString(signDocMsg, stdFeeToPutIntoSignDoc, chainId, memo, accountNumber, sequence)
-
+      console.log("signdoc")
+      console.log(signDocJsonString)
       let params = [fromAddress, signDocJsonString];
       let method = 'personal_sign';
 
